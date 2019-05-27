@@ -70,9 +70,6 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-generate_messages( DEPENDENCIES std_msgs)
-
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -105,7 +102,7 @@ generate_messages( DEPENDENCIES std_msgs)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES 19_robotics_practicals
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs
   DEPENDS system_lib
 )
 
@@ -123,8 +120,8 @@ include_directories( include ${catkin_INCLUDE_DIRS})
 # )
 
 add_executable(kalman_gps src/KalmanGps_node.cpp src/KalmanFilter.cpp)
-#target_link_libraries(kalman_gsp ${catkin_LIBRARIES})
-add_dependencies(kalman_gps ${PROJECT_NAME}_gencpp)
+target_link_libraries(kalman_gps ${catkin_LIBRARIES})
+add_dependencies(kalman_gps ${PROJECT_NAME}_gencpp std_msgs)
 
 
 FILE(GLOB SRCS src/KalmanFilter.cpp)

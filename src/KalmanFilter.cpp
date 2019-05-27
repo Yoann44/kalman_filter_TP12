@@ -65,6 +65,8 @@ KalmanFilter::KalmanFilter(Eigen::Matrix<double, 6, 1, Eigen::DontAlign> x0, Eig
 
 	Eigen::DiagonalMatrix<double, 3> Q(pow(SIGMA_A_DOT, 2), pow(SIGMA_K_DOT, 2), pow(SIGMA_P0_DOT, 2));
 	_Q = Q;
+
+	_last_predict = std::chrono::steady_clock::now();
 }
 
 Eigen::Matrix<double, 12, 12, Eigen::DontAlign> KalmanFilter::compute_matrix_B(float dt)
@@ -113,17 +115,23 @@ Eigen::Matrix<double, 6, 6, Eigen::DontAlign> KalmanFilter::compute_q(
 	return phi * B12;
 }
 
-void KalmanFilter::predict(double dt)
+void KalmanFilter::predict()
 {
+	std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
+	double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - _last_predict).count() / 1000.0;
+
 	Eigen::Matrix<double, 12, 12, Eigen::DontAlign> B = compute_matrix_B(dt);
 	Eigen::Matrix<double, 6, 6, Eigen::DontAlign> phi = compute_phi(B);
 	Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Qw = compute_q(B, phi);
 
 	_x_tilde = phi * _x_hat;
 	_p_tilde = phi * _p_hat * phi.transpose() + Qw;
+
+	_last_predict = now;
 }
 
 void KalmanFilter::update_gps(double meas, double measUnc) {
+	predict();
 	
 	Eigen::MatrixXd H(1, 6);
 	H(0) = 1.0;
@@ -141,6 +149,8 @@ void KalmanFilter::update_gps(double meas, double measUnc) {
 }
 
 void KalmanFilter::update_baro(double meas, double measUnc) {
+	predict();
+
 	Eigen::MatrixXd H(1, 6);
 
 	H(0) = -_x_tilde(4) * GRAVITY_CSTE * _x_tilde(5) * exp(-_x_tilde(4) * GRAVITY_CSTE * (_x_tilde(0) - _x_tilde(3)));

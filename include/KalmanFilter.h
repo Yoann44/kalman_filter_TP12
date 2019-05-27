@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <unsupported/Eigen/MatrixFunctions>
+#include <chrono>
 
 //#include <mathlib/mathlib.h>
 
@@ -18,7 +19,7 @@ public:
 	 */
 	virtual ~KalmanFilter() {};
 	
-	void predict(double dt);
+	void predict();
 	
 	void update_gps(double meas, double measUnc);
 	void update_baro(double meas, double measUnc);
@@ -32,6 +33,8 @@ private:
 	Eigen::Matrix<double, 6, 6, Eigen::DontAlign> compute_phi(Eigen::Matrix<double, 12, 12, Eigen::DontAlign> B);
 	Eigen::Matrix<double, 6, 6, Eigen::DontAlign> compute_q(Eigen::Matrix<double, 12, 12, Eigen::DontAlign> B,
 															Eigen::Matrix<double, 6, 6, Eigen::DontAlign> phi);
+
+	std::chrono::time_point<std::chrono::steady_clock> _last_predict;
 
 	Eigen::Matrix<double, 6, 1, Eigen::DontAlign> _x_tilde;
 	Eigen::Matrix<double, 6, 6, Eigen::DontAlign> _p_tilde;
