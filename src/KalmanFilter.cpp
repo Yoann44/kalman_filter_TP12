@@ -40,12 +40,15 @@
  */
 
 #include "KalmanFilter.h"
+#include <iostream>
 
 #define SIGMA_A_DOT		1.0
 #define SIGMA_P0_DOT	0.01
 #define SIGMA_K_DOT		1e-9
 
 #define GRAVITY_CSTE 	9.81
+
+extern Eigen::IOFormat OctaveFmt;
 
 KalmanFilter::KalmanFilter(Eigen::Matrix<double, 6, 1, Eigen::DontAlign> x0, Eigen::Matrix<double, 6, 6, Eigen::DontAlign> p0)
 {
@@ -119,6 +122,7 @@ void KalmanFilter::predict()
 {
 	std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
 	double dt = std::chrono::duration_cast<std::chrono::milliseconds>(now - _last_predict).count() / 1000.0;
+	//std::cout << "dt = " << dt << " - Predict : " << std::endl;
 
 	Eigen::Matrix<double, 12, 12, Eigen::DontAlign> B = compute_matrix_B(dt);
 	Eigen::Matrix<double, 6, 6, Eigen::DontAlign> phi = compute_phi(B);
@@ -126,6 +130,8 @@ void KalmanFilter::predict()
 
 	_x_tilde = phi * _x_hat;
 	_p_tilde = phi * _p_hat * phi.transpose() + Qw;
+
+	//std::cout << _p_tilde.format(OctaveFmt) <<  std::endl << std::endl;
 
 	_last_predict = now;
 }
@@ -146,6 +152,12 @@ void KalmanFilter::update_gps(double meas, double measUnc) {
 
 	_x_hat = _x_tilde + K * (Eigen::Matrix<double, 1, 1, Eigen::DontAlign>(meas) - H * _x_tilde);
 	_p_hat = (Eigen::Matrix<double, 6, 6, Eigen::DontAlign>::Identity() - K * H) * _p_tilde;
+
+	//std::cout << "Measure = " << meas << "m" << std::endl;
+	//std::cout << "X tilde : " << std::endl << _x_tilde.format(OctaveFmt) << std::endl;
+	//std::cout << "X hat : " << std::endl << _x_hat.format(OctaveFmt) << std::endl;
+	////std::cout << "H : " << std::endl << H.format(OctaveFmt) << std::endl;
+	//std::cout << "K : " << std::endl << K.format(OctaveFmt) << std::endl;
 }
 
 void KalmanFilter::update_baro(double meas, double measUnc) {
@@ -167,6 +179,13 @@ void KalmanFilter::update_baro(double meas, double measUnc) {
 
 	_x_hat = _x_tilde + K * (meas - hx);
 	_p_hat = (Eigen::Matrix<double, 6, 6, Eigen::DontAlign>::Identity() - K * H) * _p_tilde;
+
+	//std::cout << "Measure = " << meas << "pa, estimate = " << hx << "pa" << std::endl;
+	//std::cout << "Umvert : " << (H * _p_tilde * H.transpose()) << std::endl;
+	//std::cout << "X tilde : " << std::endl << _x_tilde.format(OctaveFmt) << std::endl;
+	//std::cout << "X hat : " << std::endl << _x_hat.format(OctaveFmt) << std::endl;
+	//std::cout << "H : " << std::endl << H.format(OctaveFmt) << std::endl;
+	//std::cout << "K : " << std::endl << K.format(OctaveFmt) << std::endl;
 }
 
 void KalmanFilter::getAltitude(double &altitude)
